@@ -14,6 +14,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public float TraceStartHeight { get; set; } = 200f;
 	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public float GridCellSize { get; set; } = 50f;
 	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public int ObstructionBuffer { get; set; } = 2;
+	[Property, Category( "Collision" )] public string[] TraceIgnoreTags { get; set; } = { "player", "trigger", "clutter" };
 	[Property, Category( "Performance" ), Change( nameof( InitializeSystem ) )] public int MaxInstancesPerChunk { get; set; } = 500;
 	[Property, Category( "Performance" ), Change( nameof( InitializeSystem ) )] public float ChunkSize { get; set; } = 500f;
 	[Property, Category( "Performance" ), Change( nameof( InitializeSystem ) )] public float ChunkLoadDistance { get; set; } = 3000f;
@@ -49,7 +50,6 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	private float[] _modelRenderDistSq;
 	private int[] _modelLodCounts;
 	private float[][] _modelLodDistancesSq;
-	private static readonly string[] TraceIgnoreTags = { "player", "trigger", "clutter" };
 
 	private ChunkRenderData[] _renderCache = Array.Empty<ChunkRenderData>();
 

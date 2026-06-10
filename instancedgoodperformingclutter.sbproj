@@ -1,8 +1,8 @@
 {
-  "Title": "InstancedGoodPerformingClutter",
+  "Title": "InstancedGoodPerformingScatterer",
   "Type": "game",
-  "Org": "local",
-  "Ident": "instancedgoodperformingclutter",
+  "Org": "kivin",
+  "Ident": "instancedgoodperformingscatterer",
   "Schema": 1,
   "IncludeSourceFiles": false,
   "Resources": null,
