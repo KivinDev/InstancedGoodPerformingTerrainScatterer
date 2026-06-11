@@ -43,6 +43,7 @@ public sealed partial class PerformantTerrainScatterer
 		var cache = _renderCache;
 		if ( cache.Length == 0 ) return;
 
+		if ( Scene == null ) return;
 		var camera = Scene.Camera;
 		if ( !camera.IsValid() ) return;
 

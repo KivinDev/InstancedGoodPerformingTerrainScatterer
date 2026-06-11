@@ -8,6 +8,7 @@ public sealed partial class PerformantTerrainScatterer
 {
 	private void ManageChunks()
 	{
+		if ( Scene == null ) return;
 		var camera = Scene.Camera;
 		if ( !camera.IsValid() ) return;
 		Vector3 cameraPos = camera.WorldPosition;
@@ -34,7 +35,7 @@ public sealed partial class PerformantTerrainScatterer
 		foreach ( var key in _activeChunks.Keys )
 		{
 			if ( Math.Abs( key.Item1 - cameraCx ) > chunksInRadius ||
-				Math.Abs( key.Item2 - cameraCy ) > chunksInRadius )
+			   Math.Abs( key.Item2 - cameraCy ) > chunksInRadius )
 				_chunkRemovalList.Add( key );
 		}
 
@@ -47,116 +48,136 @@ public sealed partial class PerformantTerrainScatterer
 
 	private async Task GenerateChunkAsync( int cx, int cy )
 	{
-		Transform terrainTransform = TargetTerrain.IsValid() ? TargetTerrain.WorldTransform : new Transform();
-
-		var tentativeInstances = await GameTask.RunInThreadAsync( () => CalculateChunkPlacements( cx, cy, terrainTransform ) );
-		var modelEntries = ModelEntries;
-
-		if ( tentativeInstances == null || modelEntries == null )
+		try
 		{
-			_generatingChunks.Remove( (cx, cy) );
-			return;
-		}
+			if ( !IsValid || Scene == null ) return;
+			Transform terrainTransform = TargetTerrain.IsValid() ? TargetTerrain.WorldTransform : new Transform();
 
-		int cellsPerChunk = (int)MathF.Ceiling( ChunkSize / GridCellSize );
-		int gridPadding = ObstructionBuffer;
-		int gridWidth = cellsPerChunk + (gridPadding * 2) + 2;
-		int gridArea = gridWidth * gridWidth;
-		bool[] localBlockedGrid = ArrayPool<bool>.Shared.Rent( gridArea );
-		Array.Clear( localBlockedGrid, 0, gridArea );
+			var tentativeInstances = await GameTask.RunInThreadAsync( () => CalculateChunkPlacements( cx, cy, terrainTransform ) );
 
-		int minGridX = (int)MathF.Floor( (cx * ChunkSize) / GridCellSize ) - gridPadding;
-		int minGridY = (int)MathF.Floor( (cy * ChunkSize) / GridCellSize ) - gridPadding;
-		int traceCounter = 0;
-		bool needsTrace = CheckObstructions || SnapToGround;
-		List<Transform>[] modelLists = new List<Transform>[modelEntries.Length];
-		float cxSum = 0f, cySum = 0f, czSum = 0f;
-		int placedCount = 0;
-		Vector3 traceUpOffset = Vector3.Up * TraceStartHeight;
+			if ( !IsValid || Scene == null ) return;
 
-		foreach ( var inst in tentativeInstances )
-		{
-			Vector3 finalPosition = inst.Position;
-			int gridX = (int)MathF.Floor( inst.Position.x / GridCellSize );
-			int gridY = (int)MathF.Floor( inst.Position.y / GridCellSize );
-			int localX = gridX - minGridX;
-			int localY = gridY - minGridY;
+			var modelEntries = ModelEntries;
+			if ( tentativeInstances == null || modelEntries == null ) return;
 
-			if ( CheckObstructions )
+			int cellsPerChunk = (int)MathF.Ceiling( ChunkSize / GridCellSize );
+			int gridPadding = ObstructionBuffer;
+			int gridWidth = cellsPerChunk + (gridPadding * 2) + 2;
+			int gridArea = gridWidth * gridWidth;
+
+			bool[] localBlockedGrid = ArrayPool<bool>.Shared.Rent( gridArea );
+			Array.Clear( localBlockedGrid, 0, gridArea );
+
+			try
 			{
-				bool isBlocked = false;
-				for ( int dx = -ObstructionBuffer; dx <= ObstructionBuffer; dx++ )
+				int minGridX = (int)MathF.Floor( (cx * ChunkSize) / GridCellSize ) - gridPadding;
+				int minGridY = (int)MathF.Floor( (cy * ChunkSize) / GridCellSize ) - gridPadding;
+				int traceCounter = 0;
+				bool needsTrace = CheckObstructions || SnapToGround;
+				List<Transform>[] modelLists = new List<Transform>[modelEntries.Length];
+				float cxSum = 0f, cySum = 0f, czSum = 0f;
+				int placedCount = 0;
+				Vector3 traceUpOffset = Vector3.Up * TraceStartHeight;
+
+				foreach ( var inst in tentativeInstances )
 				{
-					int nx = localX + dx;
-					if ( nx < 0 || nx >= gridWidth ) continue;
-					for ( int dy = -ObstructionBuffer; dy <= ObstructionBuffer; dy++ )
+					if ( !IsValid || Scene == null ) return;
+
+					Vector3 finalPosition = inst.Position;
+					int gridX = (int)MathF.Floor( inst.Position.x / GridCellSize );
+					int gridY = (int)MathF.Floor( inst.Position.y / GridCellSize );
+					int localX = gridX - minGridX;
+					int localY = gridY - minGridY;
+
+					if ( CheckObstructions )
 					{
-						int ny = localY + dy;
-						if ( ny < 0 || ny >= gridWidth ) continue;
-						if ( localBlockedGrid[nx + ny * gridWidth] )
+						bool isBlocked = false;
+						for ( int dx = -ObstructionBuffer; dx <= ObstructionBuffer; dx++ )
 						{
-							isBlocked = true;
-							break;
+							int nx = localX + dx;
+							if ( nx < 0 || nx >= gridWidth ) continue;
+							for ( int dy = -ObstructionBuffer; dy <= ObstructionBuffer; dy++ )
+							{
+								int ny = localY + dy;
+								if ( ny < 0 || ny >= gridWidth ) continue;
+								if ( localBlockedGrid[nx + ny * gridWidth] )
+								{
+									isBlocked = true;
+									break;
+								}
+							}
+							if ( isBlocked ) break;
+						}
+						if ( isBlocked ) continue;
+					}
+
+					if ( needsTrace )
+					{
+						var traceStart = inst.Position + traceUpOffset;
+						var traceEnd = inst.Position - traceUpOffset;
+						var trace = Scene.Trace.Ray( traceStart, traceEnd )
+						   .WithoutTags( TraceIgnoreTags )
+						   .Run();
+
+						bool hitObstruction = trace.Hit && IsObstruction( trace.GameObject );
+
+						if ( CheckObstructions && (trace.StartedSolid || hitObstruction) )
+						{
+							if ( localX >= 0 && localX < gridWidth && localY >= 0 && localY < gridWidth )
+								localBlockedGrid[localX + localY * gridWidth] = true;
+							continue;
+						}
+
+						if ( SnapToGround && trace.Hit && !trace.StartedSolid && !hitObstruction )
+							finalPosition = trace.HitPosition;
+
+						traceCounter++;
+						if ( traceCounter % 100 == 0 )
+						{
+							await GameTask.Yield();
+							if ( !IsValid || Scene == null ) return;
 						}
 					}
-					if ( isBlocked ) break;
+
+					if ( inst.ModelIndex < 0 || inst.ModelIndex >= modelEntries.Length ) continue;
+
+					finalPosition += Vector3.Up * modelEntries[inst.ModelIndex].ZOffset;
+					var list = modelLists[inst.ModelIndex] ??= new List<Transform>();
+					list.Add( new Transform( finalPosition, inst.Rotation, inst.Scale ) );
+
+					cxSum += finalPosition.x;
+					cySum += finalPosition.y;
+					czSum += finalPosition.z;
+					placedCount++;
 				}
-				if ( isBlocked ) continue;
-			}
 
-			if ( needsTrace )
-			{
-				var traceStart = inst.Position + traceUpOffset;
-				var traceEnd = inst.Position - traceUpOffset;
-				var trace = Scene.Trace.Ray( traceStart, traceEnd )
-				   .WithoutTags( TraceIgnoreTags )
-				   .Run();
+				if ( !IsValid ) return;
 
-				bool hitObstruction = trace.Hit && IsObstruction( trace.GameObject );
+				var chunk = new ClutterChunk();
+				chunk.Center = placedCount > 0
+				   ? new Vector3( cxSum / placedCount, cySum / placedCount, czSum / placedCount )
+				   : new Vector3( cx * ChunkSize + ChunkSize * 0.5f, cy * ChunkSize + ChunkSize * 0.5f, 0f );
 
-				if ( CheckObstructions && (trace.StartedSolid || hitObstruction) )
+				for ( int i = 0; i < modelLists.Length; i++ )
 				{
-					if ( localX >= 0 && localX < gridWidth && localY >= 0 && localY < gridWidth )
-						localBlockedGrid[localX + localY * gridWidth] = true;
-					continue;
+					if ( modelLists[i] != null && modelLists[i].Count > 0 )
+						chunk.TransformsByModel[i] = modelLists[i].ToArray();
 				}
 
-				if ( SnapToGround && trace.Hit && !trace.StartedSolid && !hitObstruction )
-					finalPosition = trace.HitPosition;
-
-				traceCounter++;
-				if ( traceCounter % 100 == 0 )
-					await GameTask.Yield();
+				_activeChunks[(cx, cy)] = chunk;
+				RebuildRenderCache();
 			}
-
-			if ( inst.ModelIndex < 0 || inst.ModelIndex >= modelEntries.Length ) continue;
-
-			finalPosition += Vector3.Up * modelEntries[inst.ModelIndex].ZOffset;
-			var list = modelLists[inst.ModelIndex] ??= new List<Transform>();
-			list.Add( new Transform( finalPosition, inst.Rotation, inst.Scale ) );
-
-			cxSum += finalPosition.x;
-			cySum += finalPosition.y;
-			czSum += finalPosition.z;
-			placedCount++;
+			finally
+			{
+				ArrayPool<bool>.Shared.Return( localBlockedGrid );
+			}
 		}
-
-		ArrayPool<bool>.Shared.Return( localBlockedGrid );
-		var chunk = new ClutterChunk();
-
-		chunk.Center = placedCount > 0
-		   ? new Vector3( cxSum / placedCount, cySum / placedCount, czSum / placedCount )
-		   : new Vector3( cx * ChunkSize + ChunkSize * 0.5f, cy * ChunkSize + ChunkSize * 0.5f, 0f );
-
-		for ( int i = 0; i < modelLists.Length; i++ )
+		catch ( Exception )
 		{
-			if ( modelLists[i] != null && modelLists[i].Count > 0 )
-				chunk.TransformsByModel[i] = modelLists[i].ToArray();
 		}
-
-		_activeChunks[(cx, cy)] = chunk;
-		_generatingChunks.Remove( (cx, cy) );
-
-		RebuildRenderCache();
+		finally
+		{
+			_generatingChunks.Remove( (cx, cy) );
+		}
 	}
 }

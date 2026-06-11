@@ -5,7 +5,7 @@ using Sandbox;
 public sealed partial class PerformantTerrainScatterer : Component, Component.ExecuteInEditor
 {
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public Terrain TargetTerrain { get; set; }
-	[Property, Category( "Models" ), Description("Click ``Reinitialize``, after changing properties."), Change( nameof( InitializeSystem ) )] public List<ScattererModelEntry> Models { get; set; } = new();
+	[Property, Category( "Models" ), Description( "Click ``Reinitialize``, after changing properties." ), Change( nameof( InitializeSystem ) )] public List<ScattererModelEntry> Models { get; set; } = new();
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) ), Range( 0, 90 )] public float MaxSlopeAngle { get; set; } = 45f;
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public bool ReduceDensityOnTransitions { get; set; } = false;
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) ), ShowIf( nameof( ReduceDensityOnTransitions ), true )] public float TransitionThinningIntensity { get; set; } = 1.0f;
@@ -55,14 +55,14 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 
 	[ThreadStatic]
 	private static List<Transform>[] _lodBuckets;
-	
+
 	protected override void OnEnabled()
 	{
 		if ( !TargetTerrain.IsValid() )
 		{
-			TargetTerrain = Scene.GetComponentInChildren<Terrain>();
+			TargetTerrain = Scene?.GetComponentInChildren<Terrain>();
 		}
-		
+
 		CreateSceneObject();
 		InitializeSystem();
 	}
@@ -81,6 +81,8 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	private void CreateSceneObject()
 	{
 		_sceneObject?.Delete();
+		if ( Scene == null ) return;
+
 		_sceneObject = new SceneCustomObject( Scene.SceneWorld )
 		{
 			RenderOverride = RenderClutter,

@@ -163,6 +163,4 @@ public sealed partial class PerformantTerrainScatterer
 		float h1 = h01 + (h11 - h01) * fx;
 		return h0 + (h1 - h0) * fy;
 	}
-
-
 }
