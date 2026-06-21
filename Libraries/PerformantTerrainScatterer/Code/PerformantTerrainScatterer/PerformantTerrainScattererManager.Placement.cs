@@ -48,9 +48,9 @@ public sealed partial class PerformantTerrainScatterer
 			float materialTotalWeight = 0f;
 			for ( int m = 0; m < modelsCount; m++ )
 			{
-				if ( dominantMaterialId < _allowedModelIndices[m].Length && _allowedModelIndices[m][dominantMaterialId] )
+				if ( dominantMaterialId < _modelMaterialWeights[m].Length )
 				{
-					materialTotalWeight += modelEntries[m].Weight;
+					materialTotalWeight += _modelMaterialWeights[m][dominantMaterialId];
 				}
 			}
 
@@ -62,13 +62,17 @@ public sealed partial class PerformantTerrainScatterer
 
 			for ( int m = 0; m < modelsCount; m++ )
 			{
-				if ( dominantMaterialId < _allowedModelIndices[m].Length && _allowedModelIndices[m][dominantMaterialId] )
+				if ( dominantMaterialId < _modelMaterialWeights[m].Length )
 				{
-					currentWeightSum += modelEntries[m].Weight;
-					if ( roll <= currentWeightSum )
+					float w = _modelMaterialWeights[m][dominantMaterialId];
+					if ( w > 0f )
 					{
-						selectedModelIndex = m;
-						break;
+						currentWeightSum += w;
+						if ( roll <= currentWeightSum )
+						{
+							selectedModelIndex = m;
+							break;
+						}
 					}
 				}
 			}

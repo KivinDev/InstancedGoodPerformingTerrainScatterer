@@ -5,7 +5,7 @@ using Sandbox;
 public sealed partial class PerformantTerrainScatterer : Component, Component.ExecuteInEditor
 {
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public Terrain TargetTerrain { get; set; }
-	[Property, Category( "Models" ), Description( "Click ``Reinitialize``, after changing properties." ), Change( nameof( InitializeSystem ) )] public List<ScattererModelEntry> Models { get; set; } = new();
+	[Property, Category( "Models" ), Change( nameof( InitializeSystem ) )] public List<ScattererModelEntry> Models { get; set; } = new();
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) ), Range( 0, 90 )] public float MaxSlopeAngle { get; set; } = 45f;
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public bool ReduceDensityOnTransitions { get; set; } = false;
 	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) ), ShowIf( nameof( ReduceDensityOnTransitions ), true )] public float TransitionThinningIntensity { get; set; } = 1.0f;
@@ -36,7 +36,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	private float _terrainSize;
 	private float _terrainHeight;
 	private float _maxRenderDistance;
-	private bool[][] _allowedModelIndices;
+	private float[][] _modelMaterialWeights;
 	private GameObject _cachedHitObject;
 	private bool _cachedIsObstruction;
 	private Sandbox.Utility.INoiseField[] _modelNoiseFields;
@@ -112,7 +112,21 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		{
 			if ( t.Model != null )
 			{
-				if ( t.Weight > 0f ) hasValidModel = true;
+				bool hasWeight = false;
+				if ( t.MaterialWeights != null )
+				{
+					foreach ( var mw in t.MaterialWeights )
+					{
+						if ( mw.Weight > 0f )
+						{
+							hasWeight = true;
+							break;
+						}
+					}
+				}
+
+				if ( hasWeight ) hasValidModel = true;
+
 				if ( t.RenderDistance > _maxRenderDistance )
 					_maxRenderDistance = t.RenderDistance;
 			}
@@ -171,17 +185,24 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		_resolution = TargetTerrain.Storage.Resolution;
 		_terrainSize = TargetTerrain.TerrainSize;
 		_terrainHeight = TargetTerrain.TerrainHeight;
-		_allowedModelIndices = new bool[Models.Count][];
+		
+		_modelMaterialWeights = new float[Models.Count][];
 
 		for ( int m = 0; m < Models.Count; m++ )
 		{
-			_allowedModelIndices[m] = new bool[32];
-			if ( TargetTerrain.Storage.Materials != null && Models[m].AllowedMaterials != null )
+			_modelMaterialWeights[m] = new float[32];
+			if ( TargetTerrain.Storage.Materials != null && Models[m].MaterialWeights != null )
 			{
 				for ( int i = 0; i < TargetTerrain.Storage.Materials.Count; i++ )
 				{
-					if ( Models[m].AllowedMaterials.Contains( TargetTerrain.Storage.Materials[i] ) )
-						_allowedModelIndices[m][i] = true;
+					foreach ( var mw in Models[m].MaterialWeights )
+					{
+						if ( mw.Material == TargetTerrain.Storage.Materials[i] )
+						{
+							_modelMaterialWeights[m][i] = mw.Weight;
+							break;
+						}
+					}
 				}
 			}
 		}

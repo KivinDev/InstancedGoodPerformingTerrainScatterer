@@ -213,14 +213,20 @@
           "Models": [
             {
               "Model": "white cubes.vmdl",
-              "Weight": 1,
               "ZOffset": 0,
               "NoiseType": "None",
               "NoiseScale": 0.002,
               "NoiseThreshold": 0.4,
               "RenderDistance": 2500,
-              "AllowedMaterials": [
-                "white.tmat"
+              "MaterialWeights": [
+                {
+                  "Material": "grass.tmat",
+                  "Weight": 40.76923
+                },
+                {
+                  "Material": "white.tmat",
+                  "Weight": 7.692308
+                }
               ],
               "RandomizeScale": true,
               "MinScale": 0.8,
@@ -229,14 +235,16 @@
             },
             {
               "Model": "green cubes.vmdl",
-              "Weight": 55.932205,
               "ZOffset": 0,
               "NoiseType": "None",
               "NoiseScale": 0.002,
               "NoiseThreshold": 0.4,
               "RenderDistance": 2500,
-              "AllowedMaterials": [
-                "grass.tmat"
+              "MaterialWeights": [
+                {
+                  "Material": "white.tmat",
+                  "Weight": 14.615385
+                }
               ],
               "RandomizeScale": false,
               "MinScale": 0.8,
@@ -245,15 +253,20 @@
             },
             {
               "Model": "purple cubes.vmdl",
-              "Weight": 1,
               "ZOffset": 0,
               "NoiseType": "None",
               "NoiseScale": 0.002,
               "NoiseThreshold": 0.4,
               "RenderDistance": 2500,
-              "AllowedMaterials": [
-                "grass.tmat",
-                "white.tmat"
+              "MaterialWeights": [
+                {
+                  "Material": "white.tmat",
+                  "Weight": 19.23077
+                },
+                {
+                  "Material": "grass.tmat",
+                  "Weight": 30.769232
+                }
               ],
               "RandomizeScale": false,
               "MinScale": 0.8,
@@ -269,7 +282,7 @@
           "OnComponentStart": null,
           "OnComponentUpdate": null,
           "RandomizeRotation": true,
-          "ReduceDensityOnTransitions": false,
+          "ReduceDensityOnTransitions": true,
           "Seed": 12345,
           "SnapToGround": true,
           "TargetTerrain": {
@@ -381,7 +394,7 @@
       "__version": 2,
       "Flags": 0,
       "Name": "Player Controller",
-      "Position": "132.547607,109.817993,39.087368",
+      "Position": "5220.70898,4042.00586,505.462006",
       "Rotation": "0,0,0,1",
       "Scale": "1,1,1",
       "Tags": "",
