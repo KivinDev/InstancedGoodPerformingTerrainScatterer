@@ -4,27 +4,60 @@ using Sandbox;
 
 public sealed partial class PerformantTerrainScatterer : Component, Component.ExecuteInEditor
 {
-	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public Terrain TargetTerrain { get; set; }
-	[Property, Category( "Models" ), Change( nameof( InitializeSystem ) )] public List<ScattererModelEntry> Models { get; set; } = new();
-	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) ), Range( 0, 90 )] public float MaxSlopeAngle { get; set; } = 45f;
-	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public bool ReduceDensityOnTransitions { get; set; } = false;
-	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) ), ShowIf( nameof( ReduceDensityOnTransitions ), true )] public float TransitionThinningIntensity { get; set; } = 1.0f;
-	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public bool SnapToGround { get; set; } = true;
-	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public bool CheckObstructions { get; set; } = true;
-	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public float TraceStartHeight { get; set; } = 200f;
-	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public float GridCellSize { get; set; } = 50f;
-	[Property, Category( "Collision" ), Change( nameof( InitializeSystem ) )] public int ObstructionBuffer { get; set; } = 2;
-	[Property, Category( "Collision" )] public string[] TraceIgnoreTags { get; set; } = { "player", "trigger", "clutter" };
-	[Property, Category( "Performance" ), Change( nameof( InitializeSystem ) )] public int MaxInstancesPerChunk { get; set; } = 500;
-	[Property, Category( "Performance" ), Change( nameof( InitializeSystem ) )] public float ChunkSize { get; set; } = 500f;
-	[Property, Category( "Performance" ), Change( nameof( InitializeSystem ) )] public float ChunkLoadDistance { get; set; } = 3000f;
+	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) )]
+	public Terrain TargetTerrain { get; set; }
+
+	[Property, Category( "Models" ), Change( nameof(InitializeSystem) )]
+	public List<ScattererModelEntry> Models { get; set; } = new();
+
+	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) ), Range( 0, 90 )]
+	public float MaxSlopeAngle { get; set; } = 45f;
+
+	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) )]
+	public bool ReduceDensityOnTransitions { get; set; } = false;
+
+	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) ),
+	 ShowIf( nameof(ReduceDensityOnTransitions), true )]
+	public float TransitionThinningIntensity { get; set; } = 1.0f;
+
+	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) )]
+	public bool SnapToGround { get; set; } = true;
+
+	[Property, Category( "Collision" ), Change( nameof(InitializeSystem) )]
+	public bool CheckObstructions { get; set; } = true;
+
+	[Property, Category( "Collision" ), Change( nameof(InitializeSystem) )]
+	public float TraceStartHeight { get; set; } = 200f;
+
+	[Property, Category( "Collision" ), Change( nameof(InitializeSystem) )]
+	public float GridCellSize { get; set; } = 50f;
+
+	[Property, Category( "Collision" ), Change( nameof(InitializeSystem) )]
+	public int ObstructionBuffer { get; set; } = 2;
+
+	[Property, Category( "Collision" )]
+	public string[] TraceIgnoreTags { get; set; } = { "player", "trigger", "clutter" };
+
+	[Property, Category( "Performance" ), Change( nameof(InitializeSystem) )]
+	public int MaxInstancesPerChunk { get; set; } = 500;
+
+	[Property, Category( "Performance" ), Change( nameof(InitializeSystem) )]
+	public float ChunkSize { get; set; } = 500f;
+
+	[Property, Category( "Performance" ), Change( nameof(InitializeSystem) )]
+	public float ChunkLoadDistance { get; set; } = 3000f;
 
 	[Property, Category( "Performance" )] public bool UseFrustumCulling { get; set; } = true;
 	[Property, Category( "Performance" )] public float FrustumCullMinDistance { get; set; } = 800f;
 
-	[Property, Category( "Terrain" ), Change( nameof( InitializeSystem ) )] public bool UseTerrainNormal { get; set; } = true;
-	[Property, Category( "Seed" ), Change( nameof( InitializeSystem ) )] public int Seed { get; set; } = 12345;
-	[Property, Category( "Randomization" ), Change( nameof( InitializeSystem ) )] public bool RandomizeRotation { get; set; } = true;
+	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) )]
+	public bool UseTerrainNormal { get; set; } = true;
+
+	[Property, Category( "Seed" ), Change( nameof(InitializeSystem) )]
+	public int Seed { get; set; } = 12345;
+
+	[Property, Category( "Randomization" ), Change( nameof(InitializeSystem) )]
+	public bool RandomizeRotation { get; set; } = true;
 
 	private readonly Dictionary<(int, int), ClutterChunk> _activeChunks = new();
 	private readonly HashSet<(int, int)> _generatingChunks = new();
@@ -52,8 +85,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 
 	private ChunkRenderData[] _renderCache = Array.Empty<ChunkRenderData>();
 
-	[ThreadStatic]
-	private static List<Transform>[] _lodBuckets;
+	[ThreadStatic] private static List<Transform>[] _lodBuckets;
 
 	protected override void OnEnabled()
 	{
@@ -112,17 +144,22 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		{
 			if ( t.Model != null )
 			{
+				var seenMaterials = new HashSet<TerrainMaterial>();
 				bool hasWeight = false;
-				if ( t.MaterialWeights != null )
+
+				foreach ( var mw in t.MaterialWeights )
 				{
-					foreach ( var mw in t.MaterialWeights )
-					{
-						if ( mw.Weight > 0f )
-						{
-							hasWeight = true;
-							break;
-						}
-					}
+					if ( mw.Material == null ) continue;
+
+					if ( !seenMaterials.Add( mw.Material ) )
+						Log.Warning(
+							$"[Scatterer] Duplicate material entry '{mw.Material.ResourceName}' found for model '{t.Model.ResourceName}'." );
+
+					if ( mw.Weight <= 0f )
+						Log.Warning(
+							$"[Scatterer] Weight is set to 0 for material '{mw.Material.ResourceName}' on model '{t.Model.ResourceName}'." );
+
+					if ( mw.Weight > 0f ) hasWeight = true;
 				}
 
 				if ( hasWeight ) hasValidModel = true;
@@ -147,7 +184,8 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 			if ( mdl != null )
 			{
 				_modelLodCounts[m] = Math.Max( 1, mdl.MeshInfo.LodCount );
-				if ( mdl.MeshInfo.LodSwitchDistances != null && mdl.MeshInfo.LodSwitchDistances.Length > 0 && mdl.MeshInfo.LodSwitchDistances[0] > 0f )
+				if ( mdl.MeshInfo.LodSwitchDistances != null && mdl.MeshInfo.LodSwitchDistances.Length > 0 &&
+				     mdl.MeshInfo.LodSwitchDistances[0] > 0f )
 				{
 					var switchDistances = mdl.MeshInfo.LodSwitchDistances;
 					_modelLodDistancesSq[m] = new float[switchDistances.Length];
@@ -185,7 +223,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		_resolution = TargetTerrain.Storage.Resolution;
 		_terrainSize = TargetTerrain.TerrainSize;
 		_terrainHeight = TargetTerrain.TerrainHeight;
-		
+
 		_modelMaterialWeights = new float[Models.Count][];
 
 		for ( int m = 0; m < Models.Count; m++ )

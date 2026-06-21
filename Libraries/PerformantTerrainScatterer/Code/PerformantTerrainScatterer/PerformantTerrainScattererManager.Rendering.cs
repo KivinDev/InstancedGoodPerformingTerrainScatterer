@@ -28,11 +28,7 @@ public sealed partial class PerformantTerrainScatterer
 				};
 			}
 
-			newCache[index++] = new ChunkRenderData
-			{
-				Center = chunk.Center,
-				Batches = batches
-			};
+			newCache[index++] = new ChunkRenderData { Center = chunk.Center, Batches = batches };
 		}
 
 		_renderCache = newCache;

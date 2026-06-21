@@ -42,8 +42,8 @@ public sealed partial class PerformantTerrainScatterer
 			if ( compactMat.IsHole ) continue;
 
 			int dominantMaterialId = (compactMat.BlendFactor > 127)
-			   ? compactMat.OverlayTextureId
-			   : compactMat.BaseTextureId;
+				? compactMat.OverlayTextureId
+				: compactMat.BaseTextureId;
 
 			float materialTotalWeight = 0f;
 			for ( int m = 0; m < modelsCount; m++ )
@@ -103,8 +103,10 @@ public sealed partial class PerformantTerrainScatterer
 				float hR = SampleHeightBilinear( u + textureEps, v );
 				float hD = SampleHeightBilinear( u, v - textureEps );
 				float hU = SampleHeightBilinear( u, v + textureEps );
-				Vector3 terrainTangentX = new Vector3( 2.0f * textureEps * _terrainSize, 0f, (hR - hL) * _terrainHeight );
-				Vector3 terrainTangentY = new Vector3( 0f, 2.0f * textureEps * _terrainSize, (hU - hD) * _terrainHeight );
+				Vector3 terrainTangentX =
+					new Vector3( 2.0f * textureEps * _terrainSize, 0f, (hR - hL) * _terrainHeight );
+				Vector3 terrainTangentY =
+					new Vector3( 0f, 2.0f * textureEps * _terrainSize, (hU - hD) * _terrainHeight );
 				Vector3 terrainNormalLocal = Vector3.Cross( terrainTangentX, terrainTangentY ).Normal;
 				normal = terrainTransform.Rotation * terrainNormalLocal;
 				float slopeAngle = Vector3.GetAngle( Vector3.Up, normal );
@@ -116,23 +118,20 @@ public sealed partial class PerformantTerrainScatterer
 			Vector3 worldTerrainPoint = terrainTransform.PointToWorld( finalLocalPoint );
 
 			Rotation randomYaw = RandomizeRotation
-			   ? Rotation.FromYaw( random.NextSingle() * 360f )
-			   : Rotation.Identity;
+				? Rotation.FromYaw( random.NextSingle() * 360f )
+				: Rotation.Identity;
 
 			Rotation finalRot = UseTerrainNormal
-			   ? Rotation.FromToRotation( Vector3.Up, normal ) * randomYaw
-			   : randomYaw;
+				? Rotation.FromToRotation( Vector3.Up, normal ) * randomYaw
+				: randomYaw;
 
 			float scale = selectedModel.RandomizeScale
-			   ? (random.NextSingle() * (selectedModel.MaxScale - selectedModel.MinScale) + selectedModel.MinScale)
-			   : 1.0f;
+				? (random.NextSingle() * (selectedModel.MaxScale - selectedModel.MinScale) + selectedModel.MinScale)
+				: 1.0f;
 
 			instances.Add( new InstanceData
 			{
-				Position = worldTerrainPoint,
-				Rotation = finalRot,
-				Scale = scale,
-				ModelIndex = selectedModelIndex
+				Position = worldTerrainPoint, Rotation = finalRot, Scale = scale, ModelIndex = selectedModelIndex
 			} );
 		}
 
@@ -141,7 +140,7 @@ public sealed partial class PerformantTerrainScatterer
 
 	[MethodImpl( MethodImplOptions.AggressiveInlining )]
 	private int HashCombine( int seed, int value )
-	   => seed ^ (value + -1640531527 + (seed << 6) + (seed >> 2));
+		=> seed ^ (value + -1640531527 + (seed << 6) + (seed >> 2));
 
 	[MethodImpl( MethodImplOptions.AggressiveInlining )]
 	private bool IsObstruction( GameObject hitObject )

@@ -35,7 +35,7 @@ public sealed partial class PerformantTerrainScatterer
 		foreach ( var key in _activeChunks.Keys )
 		{
 			if ( Math.Abs( key.Item1 - cameraCx ) > chunksInRadius ||
-			   Math.Abs( key.Item2 - cameraCy ) > chunksInRadius )
+			     Math.Abs( key.Item2 - cameraCy ) > chunksInRadius )
 				_chunkRemovalList.Add( key );
 		}
 
@@ -53,7 +53,8 @@ public sealed partial class PerformantTerrainScatterer
 			if ( !IsValid || Scene == null ) return;
 			Transform terrainTransform = TargetTerrain.IsValid() ? TargetTerrain.WorldTransform : new Transform();
 
-			var tentativeInstances = await GameTask.RunInThreadAsync( () => CalculateChunkPlacements( cx, cy, terrainTransform ) );
+			var tentativeInstances =
+				await GameTask.RunInThreadAsync( () => CalculateChunkPlacements( cx, cy, terrainTransform ) );
 
 			if ( !IsValid || Scene == null ) return;
 
@@ -106,8 +107,10 @@ public sealed partial class PerformantTerrainScatterer
 									break;
 								}
 							}
+
 							if ( isBlocked ) break;
 						}
+
 						if ( isBlocked ) continue;
 					}
 
@@ -116,8 +119,8 @@ public sealed partial class PerformantTerrainScatterer
 						var traceStart = inst.Position + traceUpOffset;
 						var traceEnd = inst.Position - traceUpOffset;
 						var trace = Scene.Trace.Ray( traceStart, traceEnd )
-						   .WithoutTags( TraceIgnoreTags )
-						   .Run();
+							.WithoutTags( TraceIgnoreTags )
+							.Run();
 
 						bool hitObstruction = trace.Hit && IsObstruction( trace.GameObject );
 
@@ -155,8 +158,8 @@ public sealed partial class PerformantTerrainScatterer
 
 				var chunk = new ClutterChunk();
 				chunk.Center = placedCount > 0
-				   ? new Vector3( cxSum / placedCount, cySum / placedCount, czSum / placedCount )
-				   : new Vector3( cx * ChunkSize + ChunkSize * 0.5f, cy * ChunkSize + ChunkSize * 0.5f, 0f );
+					? new Vector3( cxSum / placedCount, cySum / placedCount, czSum / placedCount )
+					: new Vector3( cx * ChunkSize + ChunkSize * 0.5f, cy * ChunkSize + ChunkSize * 0.5f, 0f );
 
 				for ( int i = 0; i < modelLists.Length; i++ )
 				{
