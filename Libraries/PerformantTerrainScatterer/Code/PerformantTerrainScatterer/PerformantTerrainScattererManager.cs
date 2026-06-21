@@ -42,6 +42,9 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	public int MaxInstancesPerChunk { get; set; } = 500;
 
 	[Property, Category( "Performance" ), Change( nameof(InitializeSystem) )]
+	public List<MaterialInstanceOverride> MaterialOverrides { get; set; } = new();
+
+	[Property, Category( "Performance" ), Change( nameof(InitializeSystem) )]
 	public float ChunkSize { get; set; } = 500f;
 
 	[Property, Category( "Performance" ), Change( nameof(InitializeSystem) )]
@@ -82,6 +85,9 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	private float[] _modelRenderDistSq;
 	private int[] _modelLodCounts;
 	private float[][] _modelLodDistancesSq;
+
+	private int[] _materialMaxInstances;
+	private int _maxInstancesLoopCount;
 
 	private ChunkRenderData[] _renderCache = Array.Empty<ChunkRenderData>();
 
@@ -136,6 +142,27 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 
 		if ( Models == null || Models.Count == 0 ) return;
 		if ( !TargetTerrain.IsValid() || TargetTerrain.Storage == null ) return;
+
+		var seenModels = new HashSet<Model>();
+		foreach ( var entry in Models )
+		{
+			if ( entry.Model != null && !seenModels.Add( entry.Model ) )
+			{
+				Log.Warning( $"[Scatterer] Duplicate model entry found for '{entry.Model.ResourceName}' in the Models configuration list." );
+			}
+		}
+
+		if ( MaterialOverrides != null )
+		{
+			var seenOverrideMaterials = new HashSet<TerrainMaterial>();
+			foreach ( var ov in MaterialOverrides )
+			{
+				if ( ov.Material != null && !seenOverrideMaterials.Add( ov.Material ) )
+				{
+					Log.Warning( $"[Scatterer] Duplicate material override configuration found for material '{ov.Material.ResourceName}'." );
+				}
+			}
+		}
 
 		bool hasValidModel = false;
 		_maxRenderDistance = ChunkLoadDistance;
@@ -256,6 +283,29 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 				_modelNoiseFields[m] = Sandbox.Utility.Noise.PerlinField( parameters );
 			else if ( modelEntry.NoiseType == ScattererNoiseType.Simplex )
 				_modelNoiseFields[m] = Sandbox.Utility.Noise.SimplexField( parameters );
+		}
+
+		_materialMaxInstances = new int[32];
+		Array.Fill( _materialMaxInstances, MaxInstancesPerChunk );
+		_maxInstancesLoopCount = MaxInstancesPerChunk;
+
+		if ( TargetTerrain.Storage.Materials != null && MaterialOverrides != null )
+		{
+			for ( int i = 0; i < TargetTerrain.Storage.Materials.Count; i++ )
+			{
+				foreach ( var ov in MaterialOverrides )
+				{
+					if ( ov.Material == TargetTerrain.Storage.Materials[i] )
+					{
+						_materialMaxInstances[i] = ov.MaxInstances;
+						if ( ov.MaxInstances > _maxInstancesLoopCount )
+						{
+							_maxInstancesLoopCount = ov.MaxInstances;
+						}
+						break;
+					}
+				}
+			}
 		}
 
 		RebuildRenderCache();

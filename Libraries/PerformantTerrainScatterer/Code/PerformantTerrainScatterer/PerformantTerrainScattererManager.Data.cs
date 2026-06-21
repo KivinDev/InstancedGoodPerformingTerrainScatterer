@@ -17,6 +17,13 @@ public sealed partial class PerformantTerrainScatterer
 		[Property, Range( 0f, 100f )] public float Weight { get; set; } = 1f;
 	}
 
+	public struct MaterialInstanceOverride
+	{
+		public MaterialInstanceOverride() { }
+		[Property] public TerrainMaterial Material { get; set; } = null;
+		[Property] public int MaxInstances { get; set; } = 500;
+	}
+
 	public struct ScattererModelEntry
 	{
 		public ScattererModelEntry() { }

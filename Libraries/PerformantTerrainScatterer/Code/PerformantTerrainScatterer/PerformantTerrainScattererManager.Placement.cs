@@ -11,7 +11,8 @@ public sealed partial class PerformantTerrainScatterer
 		var modelEntries = ModelEntries;
 		if ( modelEntries == null || modelEntries.Length == 0 ) return null;
 
-		var instances = new List<InstanceData>( MaxInstancesPerChunk );
+		int loopCount = _maxInstancesLoopCount;
+		var instances = new List<InstanceData>( loopCount );
 		int chunkSeed = HashCombine( Seed, HashCombine( cx, cy ) );
 		var random = new Random( chunkSeed );
 		float textureEps = 1.0f / (_resolution - 1);
@@ -19,7 +20,9 @@ public sealed partial class PerformantTerrainScatterer
 		float chunkBaseY = cy * ChunkSize;
 		int modelsCount = modelEntries.Length;
 
-		for ( int i = 0; i < MaxInstancesPerChunk; i++ )
+		int[] placedCountPerMaterial = new int[32];
+
+		for ( int i = 0; i < loopCount; i++ )
 		{
 			float localX = random.NextSingle() * ChunkSize;
 			float localY = random.NextSingle() * ChunkSize;
@@ -44,6 +47,12 @@ public sealed partial class PerformantTerrainScatterer
 			int dominantMaterialId = (compactMat.BlendFactor > 127)
 				? compactMat.OverlayTextureId
 				: compactMat.BaseTextureId;
+
+			if ( dominantMaterialId < 32 )
+			{
+				if ( placedCountPerMaterial[dominantMaterialId] >= _materialMaxInstances[dominantMaterialId] )
+					continue;
+			}
 
 			float materialTotalWeight = 0f;
 			for ( int m = 0; m < modelsCount; m++ )
@@ -133,6 +142,11 @@ public sealed partial class PerformantTerrainScatterer
 			{
 				Position = worldTerrainPoint, Rotation = finalRot, Scale = scale, ModelIndex = selectedModelIndex
 			} );
+
+			if ( dominantMaterialId < 32 )
+			{
+				placedCountPerMaterial[dominantMaterialId]++;
+			}
 		}
 
 		return instances;

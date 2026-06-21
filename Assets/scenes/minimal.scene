@@ -208,6 +208,16 @@
           "ChunkSize": 500,
           "FrustumCullMinDistance": 800,
           "GridCellSize": 50,
+          "MaterialOverrides": [
+            {
+              "Material": "grass.tmat",
+              "MaxInstances": 500
+            },
+            {
+              "Material": "white.tmat",
+              "MaxInstances": 200
+            }
+          ],
           "MaxInstancesPerChunk": 500,
           "MaxSlopeAngle": 45,
           "Models": [
@@ -243,7 +253,7 @@
               "MaterialWeights": [
                 {
                   "Material": "white.tmat",
-                  "Weight": 14.615385
+                  "Weight": 3.846154
                 }
               ],
               "RandomizeScale": false,
