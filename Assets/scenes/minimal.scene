@@ -229,7 +229,7 @@
             },
             {
               "Model": "green cubes.vmdl",
-              "Weight": 1,
+              "Weight": 55.932205,
               "ZOffset": 0,
               "NoiseType": "None",
               "NoiseScale": 0.002,
@@ -237,6 +237,23 @@
               "RenderDistance": 2500,
               "AllowedMaterials": [
                 "grass.tmat"
+              ],
+              "RandomizeScale": false,
+              "MinScale": 0.8,
+              "MaxScale": 1.2,
+              "LodBias": 1
+            },
+            {
+              "Model": "purple cubes.vmdl",
+              "Weight": 1,
+              "ZOffset": 0,
+              "NoiseType": "None",
+              "NoiseScale": 0.002,
+              "NoiseThreshold": 0.4,
+              "RenderDistance": 2500,
+              "AllowedMaterials": [
+                "grass.tmat",
+                "white.tmat"
               ],
               "RandomizeScale": false,
               "MinScale": 0.8,
