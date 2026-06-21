@@ -143,6 +143,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		if ( Models == null || Models.Count == 0 ) return;
 		if ( !TargetTerrain.IsValid() || TargetTerrain.Storage == null ) return;
 
+		// --- CONFIGURATION VALIDATION WARNINGS ---
 		var seenModels = new HashSet<Model>();
 		foreach ( var entry in Models )
 		{
@@ -174,19 +175,23 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 				var seenMaterials = new HashSet<TerrainMaterial>();
 				bool hasWeight = false;
 
-				foreach ( var mw in t.MaterialWeights )
+				// MISSING NULL CHECK FIXED HERE:
+				if ( t.MaterialWeights != null )
 				{
-					if ( mw.Material == null ) continue;
+					foreach ( var mw in t.MaterialWeights )
+					{
+						if ( mw.Material == null ) continue;
 
-					if ( !seenMaterials.Add( mw.Material ) )
-						Log.Warning(
-							$"[Scatterer] Duplicate material entry '{mw.Material.ResourceName}' found for model '{t.Model.ResourceName}'." );
+						if ( !seenMaterials.Add( mw.Material ) )
+							Log.Warning(
+								$"[Scatterer] Duplicate material entry '{mw.Material.ResourceName}' found for model '{t.Model.ResourceName}'." );
 
-					if ( mw.Weight <= 0f )
-						Log.Warning(
-							$"[Scatterer] Weight is set to 0 for material '{mw.Material.ResourceName}' on model '{t.Model.ResourceName}'." );
+						if ( mw.Weight <= 0f )
+							Log.Warning(
+								$"[Scatterer] Weight is set to 0 for material '{mw.Material.ResourceName}' on model '{t.Model.ResourceName}'." );
 
-					if ( mw.Weight > 0f ) hasWeight = true;
+						if ( mw.Weight > 0f ) hasWeight = true;
+					}
 				}
 
 				if ( hasWeight ) hasValidModel = true;
@@ -285,6 +290,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 				_modelNoiseFields[m] = Sandbox.Utility.Noise.SimplexField( parameters );
 		}
 
+		// --- MAPPING AND CEILING INITIALIZATION ---
 		_materialMaxInstances = new int[32];
 		Array.Fill( _materialMaxInstances, MaxInstancesPerChunk );
 		_maxInstancesLoopCount = MaxInstancesPerChunk;
