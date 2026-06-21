@@ -212,7 +212,23 @@
           "MaxSlopeAngle": 45,
           "Models": [
             {
-              "Model": "models/dev/box.vmdl",
+              "Model": "white cubes.vmdl",
+              "Weight": 1,
+              "ZOffset": 0,
+              "NoiseType": "None",
+              "NoiseScale": 0.002,
+              "NoiseThreshold": 0.4,
+              "RenderDistance": 2500,
+              "AllowedMaterials": [
+                "white.tmat"
+              ],
+              "RandomizeScale": true,
+              "MinScale": 0.8,
+              "MaxScale": 1.2,
+              "LodBias": 1
+            },
+            {
+              "Model": "green cubes.vmdl",
               "Weight": 1,
               "ZOffset": 0,
               "NoiseType": "None",
@@ -222,7 +238,7 @@
               "AllowedMaterials": [
                 "grass.tmat"
               ],
-              "RandomizeScale": true,
+              "RandomizeScale": false,
               "MinScale": 0.8,
               "MaxScale": 1.2,
               "LodBias": 1
@@ -312,7 +328,8 @@
               "TerrainSize": 20000,
               "TerrainHeight": 10000,
               "Materials": [
-                "grass.tmat"
+                "grass.tmat",
+                "white.tmat"
               ],
               "MaterialSettings": {
                 "HeightBlendEnabled": true,

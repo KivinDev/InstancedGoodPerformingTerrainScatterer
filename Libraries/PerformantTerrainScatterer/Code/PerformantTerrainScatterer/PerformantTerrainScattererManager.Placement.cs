@@ -18,7 +18,6 @@ public sealed partial class PerformantTerrainScatterer
 		float chunkBaseX = cx * ChunkSize;
 		float chunkBaseY = cy * ChunkSize;
 		int modelsCount = modelEntries.Length;
-		float totalWeight = _totalWeight;
 
 		for ( int i = 0; i < MaxInstancesPerChunk; i++ )
 		{
@@ -26,31 +25,6 @@ public sealed partial class PerformantTerrainScatterer
 			float localY = random.NextSingle() * ChunkSize;
 			float worldX = chunkBaseX + localX;
 			float worldY = chunkBaseY + localY;
-			float roll = random.NextSingle() * totalWeight;
-			float currentWeightSum = 0f;
-			int selectedModelIndex = -1;
-
-			for ( int m = 0; m < modelsCount; m++ )
-			{
-				ref var entry = ref modelEntries[m];
-				if ( entry.Model == null ) continue;
-				currentWeightSum += entry.Weight;
-				if ( roll <= currentWeightSum )
-				{
-					selectedModelIndex = m;
-					break;
-				}
-			}
-
-			if ( selectedModelIndex == -1 ) continue;
-			ref var selectedModel = ref modelEntries[selectedModelIndex];
-
-			if ( selectedModel.NoiseType != ScattererNoiseType.None )
-			{
-				var noiseField = _modelNoiseFields[selectedModelIndex];
-				float noiseVal = noiseField.Sample( worldX, worldY );
-				if ( noiseVal < selectedModel.NoiseThreshold ) continue;
-			}
 
 			Vector3 worldAbsPoint = new Vector3( worldX, worldY, 0f );
 			Vector3 terrainLocal = terrainTransform.PointToLocal( worldAbsPoint );
@@ -67,6 +41,41 @@ public sealed partial class PerformantTerrainScatterer
 
 			if ( compactMat.IsHole ) continue;
 
+			int dominantMaterialId = (compactMat.BlendFactor > 127)
+			   ? compactMat.OverlayTextureId
+			   : compactMat.BaseTextureId;
+
+			float materialTotalWeight = 0f;
+			for ( int m = 0; m < modelsCount; m++ )
+			{
+				if ( dominantMaterialId < _allowedModelIndices[m].Length && _allowedModelIndices[m][dominantMaterialId] )
+				{
+					materialTotalWeight += modelEntries[m].Weight;
+				}
+			}
+
+			if ( materialTotalWeight <= 0f ) continue;
+
+			float roll = random.NextSingle() * materialTotalWeight;
+			float currentWeightSum = 0f;
+			int selectedModelIndex = -1;
+
+			for ( int m = 0; m < modelsCount; m++ )
+			{
+				if ( dominantMaterialId < _allowedModelIndices[m].Length && _allowedModelIndices[m][dominantMaterialId] )
+				{
+					currentWeightSum += modelEntries[m].Weight;
+					if ( roll <= currentWeightSum )
+					{
+						selectedModelIndex = m;
+						break;
+					}
+				}
+			}
+
+			if ( selectedModelIndex == -1 ) continue;
+			ref var selectedModel = ref modelEntries[selectedModelIndex];
+
 			if ( ReduceDensityOnTransitions )
 			{
 				float blendNorm = compactMat.BlendFactor * 0.003921569f;
@@ -75,12 +84,12 @@ public sealed partial class PerformantTerrainScatterer
 				if ( random.NextSingle() > spawnChance ) continue;
 			}
 
-			int dominantMaterialId = (compactMat.BlendFactor > 127)
-			   ? compactMat.OverlayTextureId
-			   : compactMat.BaseTextureId;
-
-			if ( dominantMaterialId >= _allowedModelIndices[selectedModelIndex].Length ||
-			   !_allowedModelIndices[selectedModelIndex][dominantMaterialId] ) continue;
+			if ( selectedModel.NoiseType != ScattererNoiseType.None )
+			{
+				var noiseField = _modelNoiseFields[selectedModelIndex];
+				float noiseVal = noiseField.Sample( worldX, worldY );
+				if ( noiseVal < selectedModel.NoiseThreshold ) continue;
+			}
 
 			Vector3 normal = Vector3.Up;
 

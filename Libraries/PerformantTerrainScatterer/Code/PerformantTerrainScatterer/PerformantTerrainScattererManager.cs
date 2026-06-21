@@ -40,7 +40,6 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 	private GameObject _cachedHitObject;
 	private bool _cachedIsObstruction;
 	private Sandbox.Utility.INoiseField[] _modelNoiseFields;
-	private float _totalWeight;
 	private Vector3 _lastCameraPos;
 	private const float CameraUpdateThresholdSq = 10000f;
 	private const float UshortMaxReciprocal = 1.0f / ushort.MaxValue;
@@ -106,20 +105,20 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		if ( Models == null || Models.Count == 0 ) return;
 		if ( !TargetTerrain.IsValid() || TargetTerrain.Storage == null ) return;
 
-		_totalWeight = 0f;
+		bool hasValidModel = false;
 		_maxRenderDistance = ChunkLoadDistance;
 
 		foreach ( var t in Models )
 		{
 			if ( t.Model != null )
 			{
-				_totalWeight += t.Weight;
+				if ( t.Weight > 0f ) hasValidModel = true;
 				if ( t.RenderDistance > _maxRenderDistance )
 					_maxRenderDistance = t.RenderDistance;
 			}
 		}
 
-		if ( _totalWeight <= 0f ) return;
+		if ( !hasValidModel ) return;
 
 		ModelEntries = Models.ToArray();
 		_modelRenderDistSq = new float[ModelEntries.Length];
