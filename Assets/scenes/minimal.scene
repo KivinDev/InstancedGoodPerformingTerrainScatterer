@@ -203,6 +203,7 @@
           "__guid": "ffab99e5-d6fa-4a4d-805d-1bdf62a76cc8",
           "__enabled": true,
           "Flags": 0,
+          "AutomaticallyInitializeSystem": false,
           "CheckObstructions": true,
           "ChunkLoadDistance": 3000,
           "ChunkSize": 500,
@@ -231,7 +232,7 @@
               "MaterialWeights": [
                 {
                   "Material": "grass.tmat",
-                  "Weight": 40.76923
+                  "Weight": 57.692307
                 },
                 {
                   "Material": "white.tmat",
@@ -756,14 +757,14 @@
       "CustomBounds": false
     },
     "GameObjectSystems": {
-      "Sandbox.Clutter.ClutterGridSystem": {
-        "Storage": {
-          "$blob": "1e5caefe-6b2a-4ca8-8152-355ff4b0963d"
-        }
-      },
       "Sandbox.SelectionSetsSystem": {
         "Data": {
           "SelectionSets": []
+        }
+      },
+      "Sandbox.Clutter.ClutterGridSystem": {
+        "Storage": {
+          "$blob": "1e5caefe-6b2a-4ca8-8152-355ff4b0963d"
         }
       }
     }

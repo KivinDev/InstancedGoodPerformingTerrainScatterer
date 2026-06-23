@@ -52,6 +52,7 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 
 	[Property, Category( "Performance" )] public bool UseFrustumCulling { get; set; } = true;
 	[Property, Category( "Performance" )] public float FrustumCullMinDistance { get; set; } = 800f;
+	[Property, Category( "Performance" )] public bool AutomaticallyInitializeSystem { get; set; } = true;
 
 	[Property, Category( "Terrain" ), Change( nameof(InitializeSystem) )]
 	public bool UseTerrainNormal { get; set; } = true;
@@ -101,8 +102,12 @@ public sealed partial class PerformantTerrainScatterer : Component, Component.Ex
 		}
 
 		CreateSceneObject();
-		InitializeSystem();
+		if ( AutomaticallyInitializeSystem )
+		{
+			InitializeSystem();
+		}
 	}
+
 
 	protected override void OnUpdate()
 	{
